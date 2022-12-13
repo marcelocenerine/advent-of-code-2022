@@ -1,3 +1,4 @@
+// Solution to https://adventofcode.com/2022/day/1
 package main
 
 import (
