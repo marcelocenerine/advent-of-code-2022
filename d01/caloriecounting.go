@@ -3,45 +3,48 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	if max, err := caloriesCountFromFile("input.txt"); err != nil {
+	if caloriesPerElf, err := caloriesCountFromFile("input.txt"); err != nil {
 		fmt.Printf("Invalid input: %v", err)
+	} else if len(caloriesPerElf) < 3 {
+		fmt.Printf("The number of elfs in the input is %d; the required is %d", len(caloriesPerElf), 3)
 	} else {
-		fmt.Printf("The Elf carrying the most calories carries %d calories in total\n", max)
+		top3Sum := caloriesPerElf[0] + caloriesPerElf[1] + caloriesPerElf[2]
+		fmt.Printf("The top 3 Elfs carrying the most calories carries %d calories in total\n", top3Sum)
 	}
 }
 
-func caloriesCountFromFile(path string) (int, error) {
+func caloriesCountFromFile(path string) ([]int, error) {
 	if bytes, err := os.ReadFile(path); err != nil {
-		return 0, err
+		return nil, err
 	} else {
 		return caloriesCount(string(bytes[:]))
 	}
 }
 
-func caloriesCount(input string) (int, error) {
-	var curCalories, maxCalories int
+func caloriesCount(input string) ([]int, error) {
+	var caloriesPerElf []int
+	var curElfCalories int
 
 	for _, line := range strings.Split(input, "\n") {
 		if len(line) == 0 {
-			if curCalories > maxCalories {
-				maxCalories = curCalories
-			}
-
-			curCalories = 0
+			caloriesPerElf = append(caloriesPerElf, curElfCalories)
+			curElfCalories = 0
 			continue
 		}
 
 		calories, err := strconv.Atoi(line)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		curCalories += calories
+		curElfCalories += calories
 	}
 
-	return maxCalories, nil
+	sort.Sort(sort.Reverse(sort.IntSlice(caloriesPerElf)))
+	return caloriesPerElf, nil
 }
