@@ -7,57 +7,52 @@ import (
 	"strings"
 )
 
-type Play int
+type Shape string
 
 const (
-	Rock     Play = 1
-	Paper    Play = 2
-	Scissors Play = 3
+	Rock     Shape = "A"
+	Paper    Shape = "B"
+	Scissors Shape = "C"
 )
 
-type Outcome int
+var beats = map[Shape]Shape{
+	Rock:     Scissors,
+	Paper:    Rock,
+	Scissors: Paper,
+}
+var loses = map[Shape]Shape{
+	Rock:     Paper,
+	Paper:    Scissors,
+	Scissors: Rock,
+}
+var shapeScore = map[Shape]int{
+	Rock:     1,
+	Paper:    2,
+	Scissors: 3,
+}
+
+type Outcome string
 
 const (
-	Win  Outcome = 6
-	Draw Outcome = 3
-	Lose Outcome = 0
+	Loss Outcome = "X"
+	Draw Outcome = "Y"
+	Win  Outcome = "Z"
 )
 
-func (p Play) outcomeAgainst(other Play) Outcome {
-	switch p {
-	case Rock:
-		switch other {
-		case Paper:
-			return Lose
-		case Scissors:
-			return Win
-		}
-	case Paper:
-		switch other {
-		case Rock:
-			return Win
-		case Scissors:
-			return Lose
-		}
-	case Scissors:
-		switch other {
-		case Rock:
-			return Lose
-		case Paper:
-			return Win
-		}
-	}
-
-	return Draw
+var outcomeScore = map[Outcome]int{
+	Loss: 0,
+	Draw: 3,
+	Win:  6,
 }
 
 type Round struct {
-	player   Play
-	opponent Play
+	player   Shape
+	opponent Shape
+	outcome  Outcome
 }
 
-func (r *Round) playersScore() int {
-	return int(r.player) + int(r.player.outcomeAgainst(r.opponent))
+func (r *Round) playerTotalScore() int {
+	return shapeScore[r.player] + outcomeScore[r.outcome]
 }
 
 func main() {
@@ -73,7 +68,7 @@ func calculatePlayersTotalScore(rounds []Round) int {
 	var totalScore int
 
 	for _, round := range rounds {
-		totalScore += round.playersScore()
+		totalScore += round.playerTotalScore()
 	}
 
 	return totalScore
@@ -95,7 +90,6 @@ func parseInput(input string) ([]Round, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		rounds = append(rounds, round)
 	}
 
@@ -103,37 +97,24 @@ func parseInput(input string) ([]Round, error) {
 }
 
 func parseLine(line string) (Round, error) {
-	var round Round
 	cols := strings.Split(line, " ")
 
 	if len(cols) != 2 {
-		return round, fmt.Errorf("line must have exact 2 columns: %s", line)
+		return Round{}, fmt.Errorf("line must have exact 2 columns: %s", line)
 	}
 
-	opponent, err := str2Play(cols[0])
-	if err != nil {
-		return round, err
-	}
-
-	player, err := str2Play(cols[1])
-	if err != nil {
-		return round, err
-	}
-
-	round.player = player
-	round.opponent = opponent
-	return round, nil
+	opponent := Shape(cols[0])
+	outcome := Outcome(cols[1])
+	player := choosePlay(opponent, outcome)
+	return Round{player: player, opponent: opponent, outcome: outcome}, nil
 }
 
-func str2Play(str string) (Play, error) {
-	switch str {
-	case "A", "X":
-		return Rock, nil
-	case "B", "Y":
-		return Paper, nil
-	case "C", "Z":
-		return Scissors, nil
-	default:
-		return 0, fmt.Errorf("invalid play: %s", str)
+func choosePlay(opponent Shape, outcome Outcome) Shape {
+	switch outcome {
+	case Loss:
+		return beats[opponent]
+	case Win:
+		return loses[opponent]
 	}
+	return opponent // draw
 }
