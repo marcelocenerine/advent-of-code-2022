@@ -15,12 +15,12 @@ const (
 	Scissors Shape = "C"
 )
 
-var beats = map[Shape]Shape{
+var loserFor = map[Shape]Shape{
 	Rock:     Scissors,
 	Paper:    Rock,
 	Scissors: Paper,
 }
-var loses = map[Shape]Shape{
+var winnerFor = map[Shape]Shape{
 	Rock:     Paper,
 	Paper:    Scissors,
 	Scissors: Rock,
@@ -51,7 +51,7 @@ type Round struct {
 	outcome  Outcome
 }
 
-func (r *Round) playerTotalScore() int {
+func (r *Round) playerScore() int {
 	return shapeScore[r.player] + outcomeScore[r.outcome]
 }
 
@@ -59,18 +59,16 @@ func main() {
 	if rounds, err := parseInputFile("input.txt"); err != nil {
 		fmt.Printf("Invalid input: %v\n", err)
 	} else {
-		totalScore := calculatePlayersTotalScore(rounds)
+		totalScore := calculatePlayerTotalScore(rounds)
 		fmt.Printf("The player's total score is: %d\n", totalScore)
 	}
 }
 
-func calculatePlayersTotalScore(rounds []Round) int {
+func calculatePlayerTotalScore(rounds []Round) int {
 	var totalScore int
-
 	for _, round := range rounds {
-		totalScore += round.playerTotalScore()
+		totalScore += round.playerScore()
 	}
-
 	return totalScore
 }
 
@@ -84,7 +82,6 @@ func parseInputFile(path string) ([]Round, error) {
 
 func parseInput(input string) ([]Round, error) {
 	var rounds []Round
-
 	for _, line := range strings.Split(input, "\n") {
 		round, err := parseLine(line)
 		if err != nil {
@@ -92,17 +89,14 @@ func parseInput(input string) ([]Round, error) {
 		}
 		rounds = append(rounds, round)
 	}
-
 	return rounds, nil
 }
 
 func parseLine(line string) (Round, error) {
 	cols := strings.Split(line, " ")
-
 	if len(cols) != 2 {
 		return Round{}, fmt.Errorf("line must have exact 2 columns: %s", line)
 	}
-
 	opponent := Shape(cols[0])
 	outcome := Outcome(cols[1])
 	player := choosePlay(opponent, outcome)
@@ -112,9 +106,9 @@ func parseLine(line string) (Round, error) {
 func choosePlay(opponent Shape, outcome Outcome) Shape {
 	switch outcome {
 	case Loss:
-		return beats[opponent]
+		return loserFor[opponent]
 	case Win:
-		return loses[opponent]
+		return winnerFor[opponent]
 	}
 	return opponent // draw
 }
