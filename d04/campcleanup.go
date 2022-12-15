@@ -1,4 +1,4 @@
-// Solution to https://adventofcode.com/2022/day/3
+// Solution to https://adventofcode.com/2022/day/4
 package main
 
 import (
@@ -10,17 +10,32 @@ import (
 )
 
 func main() {
-	if assigments, err := parseInputFile("input.txt"); err != nil {
+	if assignments, err := parseInputFile("input.txt"); err != nil {
 		fmt.Printf("Invalid input: %v\n", err)
 	} else {
-		count := 0
-		for _, as := range assigments {
-			if as.left.contains(as.right) || as.right.contains(as.left) {
-				count++
-			}
-		}
-		fmt.Println("How many assignment pairs does one range fully contain the other? ", count)
+		fmt.Println("How many assignment pairs does one range fully contain the other? ", part1CountFullOverlaps(assignments))
+		fmt.Println("How many assignment pairs does one range overlaps the other? ", part2CountOverlaps(assignments))
 	}
+}
+
+func part1CountFullOverlaps(assignments []assignment) int {
+	count := 0
+	for _, as := range assignments {
+		if as.left.fullyOverlaps(as.right) {
+			count++
+		}
+	}
+	return count
+}
+
+func part2CountOverlaps(assignments []assignment) int {
+	count := 0
+	for _, as := range assignments {
+		if as.left.overlaps(as.right) {
+			count++
+		}
+	}
+	return count
 }
 
 type assignment struct {
@@ -35,8 +50,12 @@ type section struct {
 	start, end int
 }
 
-func (s section) contains(that section) bool {
-	return s.start <= that.start && s.end >= that.end
+func (s section) overlaps(o section) bool {
+	return (s.start >= o.start && s.start <= o.end) || (s.end >= o.start && s.end <= o.end) || s.fullyOverlaps(o)
+}
+
+func (s section) fullyOverlaps(o section) bool {
+	return (s.start <= o.start && s.end >= o.end) || (s.start >= o.start && s.end <= o.end)
 }
 
 func (s section) String() string {
@@ -72,7 +91,7 @@ func parseInput(input string) ([]assignment, error) {
 func parseLine(line string, rgx *regexp.Regexp) (assignment, error) {
 	as := assignment{}
 	if !rgx.MatchString(line) {
-		return as, fmt.Errorf("rucksack contains invalid items: %s", line)
+		return as, fmt.Errorf("invalid line: %s", line)
 	}
 
 	groups := rgx.FindAllStringSubmatch(line, -1)
