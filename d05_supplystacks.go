@@ -1,30 +1,36 @@
 // Solution to https://adventofcode.com/2022/day/5
-package main
+package adventofcode
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
-func main() {
-	for _, crane := range []crane{cm9000{}, cm9001{}} {
-		stacks, arrangements, err := parseInputFile("input.txt")
+type SupplyStacks struct{}
+
+func (s SupplyStacks) Details() Details {
+	return Details{Day: 5, Description: "Supply Stacks"}
+}
+
+func (s SupplyStacks) Solve(input *Input) (Result, error) {
+	results := [2]string{}
+
+	for i, crane := range []crane{cm9000{}, cm9001{}} {
+		stacks, arrangements, err := parseSupplyStacksInput(input)
 		if err != nil {
-			fmt.Printf("Invalid input: %v\n", err)
-			os.Exit(1)
+			return Result{}, err
 		}
 		rearranged, err := rearrange(stacks, arrangements, crane)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return Result{}, err
 		}
-		fmt.Println("Result: ", topCrates(rearranged))
+		results[i] = topCrates(rearranged)
 	}
+
+	return Result{Part1: results[0], Part2: results[1]}, nil
 }
 
 func topCrates(stacks []*stack) string {
@@ -101,32 +107,16 @@ func (s *stack) size() int {
 	return len(s.crates)
 }
 
-func (c *stack) String() string {
-	return fmt.Sprintf("%d - %v", c.id, c.crates)
-}
-
 type step struct {
 	n, from, to int
 }
 
-func (s step) String() string {
-	return fmt.Sprintf("{n=%d, from=%d to=%d}", s.n, s.from, s.to)
-}
-
-func parseInputFile(path string) ([]*stack, []step, error) {
-	if bytes, err := os.ReadFile(path); err != nil {
-		return nil, nil, err
-	} else {
-		return parseInput(string(bytes[:]))
-	}
-}
-
-func parseInput(input string) ([]*stack, []step, error) {
+func parseSupplyStacksInput(input *Input) ([]*stack, []step, error) {
 	rgx, err := regexp.Compile(`^move (\d+) from (\d+) to (\d+)$`)
 	if err != nil {
 		return nil, nil, err
 	}
-	lines := strings.Split(input, "\n")
+	lines := input.Lines()
 	if len(lines) == 0 {
 		return nil, nil, nil
 	}

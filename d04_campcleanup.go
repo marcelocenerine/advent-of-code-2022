@@ -1,21 +1,29 @@
 // Solution to https://adventofcode.com/2022/day/4
-package main
+package adventofcode
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
-func main() {
-	if assignments, err := parseInputFile("input.txt"); err != nil {
-		fmt.Printf("Invalid input: %v\n", err)
-	} else {
-		fmt.Println("How many assignment pairs does one range fully contain the other? ", part1CountFullOverlaps(assignments))
-		fmt.Println("How many assignment pairs does one range overlaps the other? ", part2CountOverlaps(assignments))
+type CampCleanup struct{}
+
+func (c CampCleanup) Details() Details {
+	return Details{Day: 4, Description: "Camp Cleanup"}
+}
+
+func (c CampCleanup) Solve(input *Input) (Result, error) {
+	assignments, err := parseAssignments(input)
+	if err != nil {
+		return Result{}, err
 	}
+	part1 := part1CountFullOverlaps(assignments)
+	part2 := part2CountOverlaps(assignments)
+	return Result{
+		Part1: strconv.Itoa(part1),
+		Part2: strconv.Itoa(part2),
+	}, nil
 }
 
 func part1CountFullOverlaps(assignments []assignment) int {
@@ -42,10 +50,6 @@ type assignment struct {
 	left, right section
 }
 
-func (a assignment) String() string {
-	return fmt.Sprintf("[%s,%s]", a.left, a.right)
-}
-
 type section struct {
 	start, end int
 }
@@ -58,37 +62,25 @@ func (s section) fullyOverlaps(o section) bool {
 	return (s.start <= o.start && s.end >= o.end) || (s.start >= o.start && s.end <= o.end)
 }
 
-func (s section) String() string {
-	return fmt.Sprintf("%d-%d", s.start, s.end)
-}
-
-func parseInputFile(path string) ([]assignment, error) {
-	if bytes, err := os.ReadFile(path); err != nil {
-		return nil, err
-	} else {
-		return parseInput(string(bytes[:]))
-	}
-}
-
-func parseInput(input string) ([]assignment, error) {
+func parseAssignments(input *Input) ([]assignment, error) {
 	rgx, err := regexp.Compile(`^(\d+)-(\d+),(\d+)-(\d+)$`)
 	if err != nil {
 		return nil, err
 	}
-	lines := strings.Split(input, "\n")
-	assignments := make([]assignment, 0, len(lines))
+	lines := input.Lines()
+	assignments := make([]assignment, len(lines))
 
-	for _, line := range lines {
-		as, err := parseLine(line, rgx)
+	for i, line := range lines {
+		as, err := parseAssignment(line, rgx)
 		if err != nil {
 			return nil, err
 		}
-		assignments = append(assignments, as)
+		assignments[i] = as
 	}
 	return assignments, nil
 }
 
-func parseLine(line string, rgx *regexp.Regexp) (assignment, error) {
+func parseAssignment(line string, rgx *regexp.Regexp) (assignment, error) {
 	as := assignment{}
 	if !rgx.MatchString(line) {
 		return as, fmt.Errorf("invalid line: %s", line)

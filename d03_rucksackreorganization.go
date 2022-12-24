@@ -1,33 +1,38 @@
 // Solution to https://adventofcode.com/2022/day/3
-package main
+package adventofcode
 
 import (
 	"fmt"
-	"os"
 	"regexp"
-	"strings"
+	"strconv"
 	"unicode/utf8"
 )
 
-func main() {
-	if rucksacks, err := parseInputFile("input.txt"); err != nil {
-		fmt.Printf("Invalid input: %v\n", err)
-	} else {
-		part1 := part1SumOfPriorities(rucksacks)
-		fmt.Printf("Part I: %d\n", part1)
+type RucksackReorganization struct{}
 
-		if part2, err := part2SumOfPriorities(rucksacks); err != nil {
-			fmt.Printf("Invalid input: %v\n", err)
-		} else {
-			fmt.Printf("Part II: %d\n", part2)
-		}
+func (r RucksackReorganization) Details() Details {
+	return Details{Day: 3, Description: "Rucksack Reorganization"}
+}
+
+func (r RucksackReorganization) Solve(input *Input) (Result, error) {
+	rucksacks, err := parseRucksacks(input)
+	if err != nil {
+		return Result{}, err
 	}
+	part1 := part1SumOfPriorities(rucksacks)
+	part2, err := part2SumOfPriorities(rucksacks)
+	if err != nil {
+		return Result{}, err
+	}
+	return Result{
+		Part1: strconv.Itoa(part1),
+		Part2: strconv.Itoa(part2),
+	}, nil
 }
 
 func part1SumOfPriorities(rucksacks []rucksack) int {
 	sumOfPriorities := 0
 	for _, rs := range rucksacks {
-		// fmt.Println(rs)
 		sumOfPriorities += rs.common.priority()
 	}
 	return sumOfPriorities
@@ -41,7 +46,6 @@ func part2SumOfPriorities(rucksacks []rucksack) (int, error) {
 
 	sumOfPriorities := 0
 	for _, gr := range groups {
-		// fmt.Println(gr)
 		sumOfPriorities += gr.badge.priority()
 	}
 	return sumOfPriorities, nil
@@ -72,36 +76,20 @@ type group struct {
 	badge item
 }
 
-func (gr group) String() string {
-	return fmt.Sprintf("elfs=%v, badge=%v, priority=%d", gr.elfs, string(gr.badge), gr.badge.priority())
-}
-
 func (rs rucksack) contains(it item) bool {
 	return rs.left[it] || rs.right[it]
 }
 
-func (rs rucksack) String() string {
-	return fmt.Sprintf("items=%s, common=%v, priority=%d", string(rs.items), string(rs.common), rs.common.priority())
-}
-
-func parseInputFile(path string) ([]rucksack, error) {
-	if bytes, err := os.ReadFile(path); err != nil {
-		return nil, err
-	} else {
-		return parseInput(string(bytes[:]))
-	}
-}
-
-func parseInput(input string) ([]rucksack, error) {
+func parseRucksacks(input *Input) ([]rucksack, error) {
 	rgx, err := regexp.Compile("[a-zA-Z]")
 	if err != nil {
 		return nil, err
 	}
-	lines := strings.Split(input, "\n")
+	lines := input.Lines()
 	rucksacks := make([]rucksack, 0, len(lines))
 
 	for _, line := range lines {
-		rs, err := parseLine(line, rgx)
+		rs, err := parseRucksack(line, rgx)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +98,7 @@ func parseInput(input string) ([]rucksack, error) {
 	return rucksacks, nil
 }
 
-func parseLine(line string, rgx *regexp.Regexp) (rucksack, error) {
+func parseRucksack(line string, rgx *regexp.Regexp) (rucksack, error) {
 	rs := rucksack{items: []item(line)}
 	rcount := utf8.RuneCountInString(line)
 	if rcount == 0 || rcount%2 != 0 {
