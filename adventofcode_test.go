@@ -33,7 +33,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: TuningTrouble{},
-			want:   Result{Part1: "1142", Part2: ""},
+			want:   Result{Part1: "1142", Part2: "2803"},
 		},
 	}
 
