@@ -31,6 +31,10 @@ func TestSolutions(t *testing.T) {
 			puzzle: SupplyStacks{},
 			want:   Result{Part1: "TLFGBZHCN", Part2: "QRQFHFWCL"},
 		},
+		{
+			puzzle: TuningTrouble{},
+			want:   Result{Part1: "1142", Part2: ""},
+		},
 	}
 
 	for _, tc := range tests {
