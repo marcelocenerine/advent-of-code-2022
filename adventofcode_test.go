@@ -35,6 +35,10 @@ func TestSolutions(t *testing.T) {
 			puzzle: TuningTrouble{},
 			want:   Result{Part1: "1142", Part2: "2803"},
 		},
+		{
+			puzzle: NoSpaceLeftOnDevice{},
+			want:   Result{Part1: "1443806", Part2: ""},
+		},
 	}
 
 	for _, tc := range tests {

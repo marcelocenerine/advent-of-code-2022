@@ -12,8 +12,8 @@ func (s TuningTrouble) Details() Details {
 }
 
 func (s TuningTrouble) Solve(input *Input) (Result, error) {
-	part1 := charCountBeforeEndOfMarker(input, 0, PacketMarkerLength)
-	part2 := charCountBeforeEndOfMarker(input, part1, MessageMarkerLength)
+	part1 := charCountUntilEndOfMarker(input, PacketMarkerLength)
+	part2 := charCountUntilEndOfMarker(input, MessageMarkerLength)
 
 	return Result{
 		Part1: strconv.Itoa(part1),
@@ -24,15 +24,15 @@ func (s TuningTrouble) Solve(input *Input) (Result, error) {
 const PacketMarkerLength = 4
 const MessageMarkerLength = 14
 
-func charCountBeforeEndOfMarker(input *Input, offset, markerLength int) int {
+func charCountUntilEndOfMarker(input *Input, markerLength int) int {
 	runes := []rune(*input)
 	runeCount := map[rune]int{}
 
-	for hi := offset; hi < len(runes); hi++ {
+	for hi := 0; hi < len(runes); hi++ {
 		right := runes[hi]
 		runeCount[right]++
 
-		if hi-offset < markerLength {
+		if hi < markerLength {
 			continue
 		}
 
