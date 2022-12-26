@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+
+	"golang.org/x/exp/maps"
 )
 
 type NoSpaceLeftOnDevice struct{}
@@ -19,24 +22,62 @@ func (s NoSpaceLeftOnDevice) Solve(input *Input) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-
-	print(root, 0)
+	part1 := part1SumOfDirSizesUpTo100000(root)
+	part2, err := part2SpaceToBeFreedUp(root)
+	if err != nil {
+		return Result{}, err
+	}
 
 	return Result{
-		Part1: strconv.Itoa(part1SumOfDirSizesUpTo100000(root)),
-		Part2: "",
+		Part1: strconv.Itoa(part1),
+		Part2: strconv.Itoa(part2),
 	}, nil
 }
 
 func part1SumOfDirSizesUpTo100000(root *Dir) int {
 	totalSize := 0
-	for name, size := range dirSizes(root) {
-		fmt.Printf("%s -> %d\n", name, size)
+	for _, size := range dirSizes(root) {
 		if size <= 100000 {
 			totalSize += size
 		}
 	}
 	return totalSize
+}
+
+func part2SpaceToBeFreedUp(root *Dir) (int, error) {
+	sizesByDir := dirSizes(root)
+	totalDiskSpace := 70000000
+	unused := totalDiskSpace - sizesByDir["/"]
+	toFreeUp := 30000000 - unused
+	dirSizes := maps.Values(sizesByDir)
+	sort.Ints(dirSizes)
+	for _, size := range dirSizes {
+		if size >= toFreeUp {
+			return size, nil
+		}
+	}
+	return 0, fmt.Errorf("can't free up %d of disk space", toFreeUp)
+}
+
+func dirSizes(root *Dir) map[string]int {
+	sizes := map[string]int{}
+	var dfs func(string, *Dir) int
+	dfs = func(path string, curr *Dir) int {
+		size := 0
+		for _, entry := range curr.Entries {
+			if f, ok := entry.(*File); ok {
+				size += f.Size
+			}
+			if d, ok := entry.(*Dir); ok {
+				path := fmt.Sprintf("%s%s/", path, d.Name)
+				size += dfs(path, d)
+			}
+		}
+		sizes[path] = size
+		return size
+	}
+	dfs("/", root)
+	return sizes
 }
 
 type FsEntry any
@@ -74,44 +115,6 @@ func (d *Dir) cd(dest string) (*Dir, error) {
 			return nil, fmt.Errorf("%s is not a directory", dest)
 		}
 		return nil, fmt.Errorf("dir %s doesn't exit", dest)
-	}
-}
-
-func dirSizes(root *Dir) map[string]int {
-	sizes := map[string]int{}
-	var dfs func(string, *Dir) int
-	dfs = func(parentPath string, curr *Dir) int {
-		path := fmt.Sprintf("%s/%s", parentPath, curr.Name)
-		size := 0
-		for _, entry := range curr.Entries {
-			if f, ok := entry.(*File); ok {
-				size += f.Size
-			}
-			if d, ok := entry.(*Dir); ok {
-				size += dfs(path, d)
-			}
-		}
-		sizes[path] = size
-		return size
-	}
-	dfs("", root)
-	return sizes
-}
-
-func print(curr FsEntry, level int) {
-	for i := 0; i < level; i++ {
-		fmt.Print("\t")
-	}
-	if f, ok := curr.(*File); ok {
-		fmt.Printf("- %s (file, %d)\n", f.Name, f.Size)
-		return
-	}
-
-	if d, ok := curr.(*Dir); ok {
-		fmt.Printf("- %s (dir)\n", d.Name)
-		for _, v := range d.Entries {
-			print(v, level+1)
-		}
 	}
 }
 
