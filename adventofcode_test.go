@@ -39,6 +39,10 @@ func TestSolutions(t *testing.T) {
 			puzzle: NoSpaceLeftOnDevice{},
 			want:   Result{Part1: "1443806", Part2: "942298"},
 		},
+		{
+			puzzle: TreetopTreeHouse{},
+			want:   Result{Part1: "1700", Part2: "?"},
+		},
 	}
 
 	for _, tc := range tests {
