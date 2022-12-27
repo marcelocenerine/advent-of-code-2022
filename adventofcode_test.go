@@ -41,7 +41,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: TreetopTreeHouse{},
-			want:   Result{Part1: "1700", Part2: "?"},
+			want:   Result{Part1: "1700", Part2: "470596"},
 		},
 	}
 

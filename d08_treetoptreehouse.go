@@ -14,14 +14,15 @@ func (p TreetopTreeHouse) Details() Details {
 }
 
 func (p TreetopTreeHouse) Solve(input *Input) (Result, error) {
-	heightMap, err := parseTreeHeights(input)
+	heights, err := parseTreeHeights(input)
 	if err != nil {
 		return Result{}, err
 	}
-	visibilityMap := heightMap.VisibleTrees()
+	visibility := heights.VisibleTrees()
+	scenicScores := heights.ScenicScores()
 	return Result{
-		Part1: strconv.Itoa(visibilityMap.Count),
-		Part2: "",
+		Part1: strconv.Itoa(visibility.Count),
+		Part2: strconv.Itoa(scenicScores.Max),
 	}, nil
 }
 
@@ -38,81 +39,84 @@ func (m TreeHeights) Width() int {
 	return len(m[0])
 }
 
+// TODO good use case for dynamic programming
 func (m TreeHeights) VisibleTrees() VisibilityMap {
-	isEdge := func(row, col int) bool {
-		return row == 0 || row == m.Height()-1 || col == 0 || col == m.Width()-1
+	var tallestTree func(int, int, int, int) int
+	tallestTree = func(r, c, rstep, cstep int) int {
+		if r < 0 || r >= m.Height() || c < 0 || c >= m.Width() {
+			return 0
+		}
+		currTree := m[r][c]
+		nextTree := tallestTree(r+rstep, c+cstep, rstep, cstep)
+		if nextTree > currTree {
+			return nextTree
+		}
+		return currTree
 	}
+
 	count := 0
 	visibilityMap := make([][]bool, m.Height())
-	topDown, bottomUp, leftRight, rightLeft := m.tallestTrees()
 
-	for row := 0; row < m.Height(); row++ {
-		visibilityMap[row] = make([]bool, m.Width())
-		for col := 0; col < m.Width(); col++ {
-			if visible := isEdge(row, col) ||
-				m[row][col] > topDown[row-1][col] ||
-				m[row][col] > bottomUp[row+1][col] ||
-				m[row][col] > leftRight[row][col-1] ||
-				m[row][col] > rightLeft[row][col+1]; visible {
-				visibilityMap[row][col] = true
+	for r := 0; r < m.Height(); r++ {
+		visibilityMap[r] = make([]bool, m.Width())
+		for c := 0; c < m.Width(); c++ {
+			height := m[r][c]
+			visible :=
+				r == 0 || r == m.Height()-1 || // top/bottom edges
+					c == 0 || c == m.Width()-1 || // left/right edges
+					height > tallestTree(r-1, c, -1, 0) || // up
+					height > tallestTree(r+1, c, 1, 0) || // down
+					height > tallestTree(r, c-1, 0, -1) || // left
+					height > tallestTree(r, c+1, 0, 1) // right
+			if visible {
+				visibilityMap[r][c] = true
 				count++
 			}
 		}
 	}
-
 	return VisibilityMap{visibilityMap, count}
 }
 
-func (m TreeHeights) tallestTrees() (TreeHeights, TreeHeights, TreeHeights, TreeHeights) {
-	topDown := make(TreeHeights, m.Height())
-	bottomUp := make(TreeHeights, m.Height())
-	leftRight := make(TreeHeights, m.Height())
-	rightLeft := make(TreeHeights, m.Height())
+func (m TreeHeights) ScenicScores() ScenicScores {
+	var distance func(int, int, int, int, int) int
+	distance = func(height, r, c, rstep, cstep int) int {
+		if r+rstep < 0 || r+rstep >= m.Height() || c+cstep < 0 || c+cstep >= m.Width() {
+			return 0
+		}
+		if height <= m[r+rstep][c+cstep] {
+			return 1
+		}
+		return 1 + distance(height, r+rstep, c+cstep, rstep, cstep)
+	}
 
+	max := 0
+	scores := make([][]int, m.Height())
 	for r := 0; r < m.Height(); r++ {
-		topDown[r] = make([]int, m.Width())
-		leftRight[r] = make([]int, m.Width())
-
+		scores[r] = make([]int, m.Width())
 		for c := 0; c < m.Width(); c++ {
-			if r == 0 || m[r][c] > topDown[r-1][c] {
-				topDown[r][c] = m[r][c]
-			} else {
-				topDown[r][c] = topDown[r-1][c]
-			}
-
-			if c == 0 || m[r][c] > leftRight[r][c-1] {
-				leftRight[r][c] = m[r][c]
-			} else {
-				leftRight[r][c] = leftRight[r][c-1]
-			}
-		}
-	}
-
-	for r := m.Height() - 1; r >= 0; r-- {
-		bottomUp[r] = make([]int, m.Width())
-		rightLeft[r] = make([]int, m.Width())
-
-		for c := m.Width() - 1; c >= 0; c-- {
-			if r == m.Height()-1 || m[r][c] > bottomUp[r+1][c] {
-				bottomUp[r][c] = m[r][c]
-			} else {
-				bottomUp[r][c] = bottomUp[r+1][c]
-			}
-
-			if c == m.Width()-1 || m[r][c] > rightLeft[r][c+1] {
-				rightLeft[r][c] = m[r][c]
-			} else {
-				rightLeft[r][c] = rightLeft[r][c+1]
+			height := m[r][c]
+			score :=
+				distance(height, r, c, -1, 0) * // up
+					distance(height, r, c, 1, 0) * // down
+					distance(height, r, c, 0, -1) * // left
+					distance(height, r, c, 0, 1) // right
+			scores[r][c] = score
+			if score > max {
+				max = score
 			}
 		}
 	}
-
-	return topDown, bottomUp, leftRight, rightLeft
+	return ScenicScores{scores, max}
 }
 
 type VisibilityMap struct {
 	Visible [][]bool
 	Count   int
+}
+
+type ScenicScores struct {
+	Scores [][]int
+	Max    int
 }
 
 func parseTreeHeights(input *Input) (TreeHeights, error) {
