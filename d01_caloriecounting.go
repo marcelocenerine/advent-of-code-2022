@@ -22,10 +22,10 @@ func (c CalorieCounting) Solve(input *Input) (Result, error) {
 	if elfCount < 3 {
 		return Result{}, fmt.Errorf("the number of elfs in the input is %d; the required is %d", elfCount, 3)
 	}
-	topSum := caloriesPerElf[0]
+	top1Sum := caloriesPerElf[0]
 	top3Sum := caloriesPerElf[0] + caloriesPerElf[1] + caloriesPerElf[2]
 	return Result{
-		Part1: strconv.Itoa(topSum),
+		Part1: strconv.Itoa(top1Sum),
 		Part2: strconv.Itoa(top3Sum),
 	}, nil
 }
