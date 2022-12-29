@@ -63,10 +63,7 @@ func (s section) fullyOverlaps(o section) bool {
 }
 
 func parseAssignments(input *Input) ([]assignment, error) {
-	rgx, err := regexp.Compile(`^(\d+)-(\d+),(\d+)-(\d+)$`)
-	if err != nil {
-		return nil, err
-	}
+	rgx := regexp.MustCompile(`^(\d+)-(\d+),(\d+)-(\d+)$`)
 	lines := input.Lines()
 	assignments := make([]assignment, len(lines))
 

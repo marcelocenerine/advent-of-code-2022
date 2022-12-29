@@ -81,10 +81,7 @@ func (rs rucksack) contains(it item) bool {
 }
 
 func parseRucksacks(input *Input) ([]rucksack, error) {
-	rgx, err := regexp.Compile("[a-zA-Z]")
-	if err != nil {
-		return nil, err
-	}
+	rgx := regexp.MustCompile("[a-zA-Z]")
 	lines := input.Lines()
 	rucksacks := make([]rucksack, 0, len(lines))
 

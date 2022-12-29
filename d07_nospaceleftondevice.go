@@ -119,10 +119,10 @@ func (d *Dir) cd(dest string) (*Dir, error) {
 }
 
 func parseCommandsOutput(input *Input) (*Dir, error) {
-	cdRgx, _ := regexp.Compile(`^\$ cd (.+)$`)
-	lsRgx, _ := regexp.Compile(`^\$ ls$`)
-	dirRgx, _ := regexp.Compile(`^dir (.+)$`)
-	fileRgx, _ := regexp.Compile(`^(\d+) (.+)$`)
+	cdRgx := regexp.MustCompile(`^\$ cd (.+)$`)
+	lsRgx := regexp.MustCompile(`^\$ ls$`)
+	dirRgx := regexp.MustCompile(`^dir (.+)$`)
+	fileRgx := regexp.MustCompile(`^(\d+) (.+)$`)
 
 	root := &Dir{Name: "/", Entries: map[string]FsEntry{}}
 	curr := root

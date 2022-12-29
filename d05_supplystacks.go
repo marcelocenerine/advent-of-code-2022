@@ -112,10 +112,7 @@ type step struct {
 }
 
 func parseSupplyStacksInput(input *Input) ([]*stack, []step, error) {
-	rgx, err := regexp.Compile(`^move (\d+) from (\d+) to (\d+)$`)
-	if err != nil {
-		return nil, nil, err
-	}
+	rgx := regexp.MustCompile(`^move (\d+) from (\d+) to (\d+)$`)
 	lines := input.Lines()
 	if len(lines) == 0 {
 		return nil, nil, nil
