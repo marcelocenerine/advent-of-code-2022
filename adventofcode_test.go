@@ -45,7 +45,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: RopeBridge{},
-			want:   Result{Part1: "6498", Part2: "?"},
+			want:   Result{Part1: "6498", Part2: "2531"},
 		},
 	}
 

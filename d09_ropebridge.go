@@ -20,13 +20,9 @@ func (p RopeBridge) Solve(input *Input) (Result, error) {
 		return Result{}, err
 	}
 	return Result{
-		Part1: strconv.Itoa(countPositionsVisitedByTail(motions)),
-		Part2: "?",
+		Part1: strconv.Itoa(countPositionsVisitedByTail(motions, 2)),
+		Part2: strconv.Itoa(countPositionsVisitedByTail(motions, 10)),
 	}, nil
-}
-
-type Delta struct {
-	X, Y int
 }
 
 type Motion struct {
@@ -34,49 +30,80 @@ type Motion struct {
 	Steps int
 }
 
-func distance(hx, hy, tx, ty int) int {
-	xDist := math.Abs(float64(hx - tx))
-	yDist := math.Abs(float64(hy - ty))
-	return int(math.Max(xDist, yDist))
+type Delta struct {
+	X, Y int
 }
 
-func countPositionsVisitedByTail(motions []Motion) int {
-	var headX, headY, tailX, tailY int
+type Rope []Knot
+
+func (r Rope) tail() Knot {
+	return r[len(r)-1]
+}
+
+type Knot struct {
+	X, Y int
+}
+
+func (p Knot) delta(that Knot) Delta {
+	return Delta{X: that.X - p.X, Y: that.Y - p.Y}
+}
+
+func (p Knot) isAdjacent(that Knot) bool {
+	delta := p.delta(that)
+	return math.Abs(float64(delta.X)) <= 1 && math.Abs(float64(delta.Y)) <= 1
+}
+
+func (p Knot) move(delta Delta) Knot {
+	return Knot{X: p.X + delta.X, Y: p.Y + delta.Y}
+}
+
+func (p Knot) moveCloser(that Knot) Knot {
+	delta := p.delta(that)
+	move := Delta{
+		X: int(math.Max(-1, math.Min(1, float64(delta.X)))),
+		Y: int(math.Max(-1, math.Min(1, float64(delta.Y)))),
+	}
+	return p.move(move)
+}
+
+func (p Knot) String() string {
+	return fmt.Sprintf("(%d,%d)", p.X, p.Y)
+}
+
+func countPositionsVisitedByTail(motions []Motion, knots int) int {
+	rope := makeRope(knots)
 	visited := make(map[string]bool)
-	visit := func(x, y int) { visited[fmt.Sprintf("%d,%d", x, y)] = true }
-	visit(tailX, tailY)
+	visit := func(k Knot) { visited[k.String()] = true }
+	visit(rope.tail())
 
 	for _, motion := range motions {
-		for step := 1; step <= motion.Steps; step++ {
+	sloop:
+		for step := 0; step < motion.Steps; step++ {
 			// move head
-			headX += motion.Dir.X
-			headY += motion.Dir.Y
+			rope[0] = rope[0].move(motion.Dir)
 
-			if distance(headX, headY, tailX, tailY) <= 1 {
-				continue
-			}
-			// move tail in the same direction
-			tailX += motion.Dir.X
-			tailY += motion.Dir.Y
+			// move remaining knots if needed
+			for k := 1; k < knots; k++ {
+				curr := rope[k]
+				prev := rope[k-1]
 
-			// same row or column?
-			if headX == tailX || headY == tailY {
-				visit(tailX, tailY)
-				continue
+				if curr.isAdjacent(prev) {
+					continue sloop
+				}
+				rope[k] = curr.moveCloser(prev)
 			}
-
-			// move in the diagonal
-			if distance(headX, headY, tailX+motion.Dir.Y, tailY+motion.Dir.X) == 1 {
-				tailX += motion.Dir.Y
-				tailY += motion.Dir.X
-			} else {
-				tailX -= motion.Dir.Y
-				tailY -= motion.Dir.X
-			}
-			visit(tailX, tailY)
+			visit(rope.tail())
 		}
 	}
 	return len(visited)
+}
+
+func makeRope(knots int) Rope {
+	rope := make([]Knot, knots)
+	for i := 0; i < knots; i++ {
+		rope[i] = Knot{}
+	}
+	return rope
 }
 
 func parseMotions(input *Input) ([]Motion, error) {
