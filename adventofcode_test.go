@@ -43,6 +43,10 @@ func TestSolutions(t *testing.T) {
 			puzzle: TreetopTreeHouse{},
 			want:   Result{Part1: "1700", Part2: "470596"},
 		},
+		{
+			puzzle: RopeBridge{},
+			want:   Result{Part1: "6498", Part2: "?"},
+		},
 	}
 
 	for _, tc := range tests {
