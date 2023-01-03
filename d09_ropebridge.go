@@ -20,8 +20,8 @@ func (p RopeBridge) Solve(input *Input) (Result, error) {
 		return Result{}, err
 	}
 	return Result{
-		Part1: strconv.Itoa(countPositionsVisitedByTail(motions, 2)),
-		Part2: strconv.Itoa(countPositionsVisitedByTail(motions, 10)),
+		Part1: strconv.Itoa(countPositionsVisitedByTail(2, motions)),
+		Part2: strconv.Itoa(countPositionsVisitedByTail(10, motions)),
 	}, nil
 }
 
@@ -70,7 +70,7 @@ func (p Knot) String() string {
 	return fmt.Sprintf("(%d,%d)", p.X, p.Y)
 }
 
-func countPositionsVisitedByTail(motions []Motion, knots int) int {
+func countPositionsVisitedByTail(knots int, motions []Motion) int {
 	rope := makeRope(knots)
 	visited := make(map[string]bool)
 	visit := func(k Knot) { visited[k.String()] = true }

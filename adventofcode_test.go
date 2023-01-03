@@ -47,6 +47,10 @@ func TestSolutions(t *testing.T) {
 			puzzle: RopeBridge{},
 			want:   Result{Part1: "6498", Part2: "2531"},
 		},
+		{
+			puzzle: CathodeRayTube{},
+			want:   Result{Part1: "", Part2: ""},
+		},
 	}
 
 	for _, tc := range tests {
