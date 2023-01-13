@@ -59,6 +59,10 @@ func TestSolutions(t *testing.T) {
 #....####..###.#....#..#.#....####.###..`,
 			},
 		},
+		{
+			puzzle: MonkeyInTheMiddle{},
+			want:   Result{Part1: "98280", Part2: "?"},
+		},
 	}
 
 	for _, tc := range tests {
