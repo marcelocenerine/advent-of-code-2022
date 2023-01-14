@@ -16,76 +16,89 @@ func (p MonkeyInTheMiddle) Details() Details {
 }
 
 func (p MonkeyInTheMiddle) Solve(input *Input) (Result, error) {
-	monkeys, err := p.parseNotes(input)
+	part1, err := p.solve(20, p.divBy3Relief, input)
 	if err != nil {
 		return Result{}, err
 	}
-	counts, err := p.processRounds(20, monkeys)
+	part2, err := p.solve(10000, p.modByDivisorsRelief, input)
 	if err != nil {
 		return Result{}, err
 	}
-	monkeyBusinessLevel, err := p.calcMonkeyBusinessLevel(counts)
-	if err != nil {
-		return Result{}, err
-	}
-	return Result{
-		Part1: strconv.Itoa(monkeyBusinessLevel),
-		Part2: "",
-	}, nil
+	return Result{part1, part2}, nil
 }
 
 type MonkeyId string
 type WorryLevel int
-type Operation func(wl WorryLevel) WorryLevel
-type ThrowNext func(wl WorryLevel) MonkeyId
+type Inspect func(wl WorryLevel) WorryLevel
+type DecideNext func(wl WorryLevel) MonkeyId
+type ReliefMaker func(monkeys []*Monkey) Relief
+type Relief func(wl WorryLevel) WorryLevel
 
 type Monkey struct {
-	Id    MonkeyId
-	Items []WorryLevel
-	Op    Operation
-	Test  ThrowNext
+	id      MonkeyId
+	items   []WorryLevel
+	divisor int
+	inspect Inspect
+	next    DecideNext
 }
 
-func (p MonkeyInTheMiddle) calcMonkeyBusinessLevel(inspectCounts map[MonkeyId]int) (int, error) {
-	if len(inspectCounts) < 2 {
-		return 0, fmt.Errorf("input contains %d monkeys; needs at least %d", len(inspectCounts), 2)
+func (p MonkeyInTheMiddle) solve(rounds int, rm ReliefMaker, input *Input) (string, error) {
+	monkeys, err := p.parseNotes(input)
+	if err != nil {
+		return "", err
+	}
+	counts, err := p.processRounds(rounds, rm, monkeys)
+	if err != nil {
+		return "", err
+	}
+	monkeyBusinessLevel, err := p.calcMonkeyBusinessLevel(counts)
+	if err != nil {
+		return "", err
+	}
+	return strconv.Itoa(monkeyBusinessLevel), nil
+}
+
+func (p MonkeyInTheMiddle) calcMonkeyBusinessLevel(inspections map[MonkeyId]int) (int, error) {
+	if len(inspections) < 2 {
+		return 0, fmt.Errorf("input contains %d monkeys; needs at least %d", len(inspections), 2)
 	}
 	var counts []int
-	for _, count := range inspectCounts {
+	for _, count := range inspections {
 		counts = append(counts, count)
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(counts)))
 	return counts[0] * counts[1], nil
 }
 
-func (p MonkeyInTheMiddle) processRounds(n int, monkeys []*Monkey) (map[MonkeyId]int, error) {
+func (p MonkeyInTheMiddle) processRounds(rounds int, rm ReliefMaker, monkeys []*Monkey) (map[MonkeyId]int, error) {
 	monkeysById := map[MonkeyId]*Monkey{}
-	inspectCountById := map[MonkeyId]int{}
+	inspections := map[MonkeyId]int{}
 	for _, monkey := range monkeys {
-		if _, ok := monkeysById[monkey.Id]; ok {
-			return nil, fmt.Errorf("duplicate monkey id: %s", monkey.Id)
+		if _, ok := monkeysById[monkey.id]; ok {
+			return nil, fmt.Errorf("duplicate monkey id: %s", monkey.id)
 		}
-		monkeysById[monkey.Id] = monkey
+		monkeysById[monkey.id] = monkey
+		inspections[monkey.id] = 0
 	}
+	reliefFn := rm(monkeys)
 
-	for round := 0; round < n; round++ {
+	for round := 0; round < rounds; round++ {
 		for _, monkey := range monkeys {
-			items := monkey.Items
-			monkey.Items = nil
-			for _, item := range items {
-				newWl := WorryLevel(monkey.Op(item) / 3)
-				next := monkey.Test(newWl)
-				if nextMonkey, ok := monkeysById[next]; ok {
-					nextMonkey.Items = append(nextMonkey.Items, newWl)
+			items := monkey.items
+			monkey.items = nil
+			for _, wl := range items {
+				newWl := reliefFn(monkey.inspect(wl))
+				recipient := monkey.next(newWl)
+				if nextMonkey, ok := monkeysById[recipient]; ok {
+					nextMonkey.items = append(nextMonkey.items, newWl)
 				} else {
-					return nil, fmt.Errorf("invalid monkey id: %s", next)
+					return nil, fmt.Errorf("invalid recipient id: %s", recipient)
 				}
-				inspectCountById[monkey.Id]++
+				inspections[monkey.id]++
 			}
 		}
 	}
-
-	return inspectCountById, nil
+	return inspections, nil
 }
 
 func (p MonkeyInTheMiddle) parseNotes(input *Input) ([]*Monkey, error) {
@@ -164,23 +177,36 @@ func (p MonkeyInTheMiddle) parseNotes(input *Input) ([]*Monkey, error) {
 		testLineGroups := testRgx.FindAllStringSubmatch(lines[i+3], -1)
 		trueLineGroups := trueRgx.FindAllStringSubmatch(lines[i+4], -1)
 		falseLineGroups := falseRgx.FindAllStringSubmatch(lines[i+5], -1)
-		divisibleBy, _ := strconv.Atoi(testLineGroups[0][1])
+		divisor, _ := strconv.Atoi(testLineGroups[0][1])
 		whenTrue := MonkeyId(trueLineGroups[0][1])
 		whenFalse := MonkeyId(falseLineGroups[0][1])
-		test := func(wl WorryLevel) MonkeyId {
-			if int(wl)%divisibleBy == 0 {
+		decideNext := func(wl WorryLevel) MonkeyId {
+			if int(wl)%divisor == 0 {
 				return whenTrue
 			}
 			return whenFalse
 		}
 
 		result = append(result, &Monkey{
-			Id:    id,
-			Items: items,
-			Op:    operation,
-			Test:  test,
+			id:      id,
+			items:   items,
+			divisor: divisor,
+			inspect: operation,
+			next:    decideNext,
 		})
 		i += 6
 	}
 	return result, nil
+}
+
+func (p MonkeyInTheMiddle) divBy3Relief(monkeys []*Monkey) Relief {
+	return func(wl WorryLevel) WorryLevel { return wl / 3 }
+}
+
+func (p MonkeyInTheMiddle) modByDivisorsRelief(monkeys []*Monkey) Relief {
+	divisor := 1
+	for _, m := range monkeys {
+		divisor *= m.divisor
+	}
+	return func(wl WorryLevel) WorryLevel { return WorryLevel(int(wl) % divisor) }
 }
