@@ -63,6 +63,62 @@ func TestSolutions(t *testing.T) {
 			puzzle: MonkeyInTheMiddle{},
 			want:   Result{Part1: "98280", Part2: "17673687232"},
 		},
+		{
+			puzzle: HillClimbingAlgorithm{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: DistressSignal{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: RegolithReservoir{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: BeaconExclusionZone{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: ProboscideaVolcanium{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: PyroclasticFlow{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: BoilingBoulders{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: NotEnoughMinerals{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: GrovePositioningSystem{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: MonkeyMath{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: MonkeyMap{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: UnstableDiffusion{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: BlizzardBasin{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
+		{
+			puzzle: FullOfHotAir{},
+			want:   Result{Part1: "?", Part2: "?"},
+		},
 	}
 
 	for _, tc := range tests {
