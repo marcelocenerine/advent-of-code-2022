@@ -21,7 +21,7 @@ type Details struct {
 }
 
 func (d Details) String() string {
-	return fmt.Sprintf("Day %d: %s", d.Day, d.Description)
+	return fmt.Sprintf("Day %02d: %s", d.Day, d.Description)
 }
 
 type Input string

@@ -111,8 +111,9 @@ type step struct {
 	n, from, to int
 }
 
+var arrangementRgx = regexp.MustCompile(`^move (\d+) from (\d+) to (\d+)$`)
+
 func parseSupplyStacksInput(input *Input) ([]*stack, []step, error) {
-	rgx := regexp.MustCompile(`^move (\d+) from (\d+) to (\d+)$`)
 	lines := input.Lines()
 	if len(lines) == 0 {
 		return nil, nil, nil
@@ -124,7 +125,7 @@ func parseSupplyStacksInput(input *Input) ([]*stack, []step, error) {
 			if err != nil {
 				return nil, nil, err
 			}
-			arrs, err := parseArrangement(lines[i+1:], rgx)
+			arrs, err := parseArrangement(lines[i+1:])
 			if err != nil {
 				return nil, nil, err
 			}
@@ -158,14 +159,14 @@ func parseStacks(lines []string) ([]*stack, error) {
 	return result, nil
 }
 
-func parseArrangement(lines []string, rgx *regexp.Regexp) ([]step, error) {
+func parseArrangement(lines []string) ([]step, error) {
 	result := make([]step, len(lines))
 
 	for i, line := range lines {
-		if !rgx.MatchString(line) {
+		if !arrangementRgx.MatchString(line) {
 			return result, fmt.Errorf("invalid step line: %s", line)
 		}
-		groups := rgx.FindAllStringSubmatch(line, -1)
+		groups := arrangementRgx.FindAllStringSubmatch(line, -1)
 		n, _ := strconv.Atoi(groups[0][1])
 		from, _ := strconv.Atoi(groups[0][2])
 		to, _ := strconv.Atoi(groups[0][3])

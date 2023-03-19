@@ -101,13 +101,16 @@ func (p MonkeyInTheMiddle) processRounds(rounds int, rm ReliefMaker, monkeys []*
 	return inspections, nil
 }
 
+var (
+	monkeyRgx = regexp.MustCompile(`^Monkey (.+?):$`)
+	itemsRgx  = regexp.MustCompile(`^\s+Starting items: (.*)`)
+	opRgx     = regexp.MustCompile(`^\s+Operation: new = (old|\d+) ([+*]) (old|\d+)$`)
+	testRgx   = regexp.MustCompile(`^\s+Test: divisible by (\d+)$`)
+	trueRgx   = regexp.MustCompile(`^\s+If true: throw to monkey (.+)$`)
+	falseRgx  = regexp.MustCompile(`^\s+If false: throw to monkey (.+)$`)
+)
+
 func (p MonkeyInTheMiddle) parseNotes(input *Input) ([]*Monkey, error) {
-	monkeyRgx := regexp.MustCompile(`^Monkey (.+?):$`)
-	itemsRgx := regexp.MustCompile(`^\s+Starting items: (.*)`)
-	opRgx := regexp.MustCompile(`^\s+Operation: new = (old|\d+) ([+*]) (old|\d+)$`)
-	testRgx := regexp.MustCompile(`^\s+Test: divisible by (\d+)$`)
-	trueRgx := regexp.MustCompile(`^\s+If true: throw to monkey (.+)$`)
-	falseRgx := regexp.MustCompile(`^\s+If false: throw to monkey (.+)$`)
 	lines := input.Lines()
 	var result []*Monkey
 

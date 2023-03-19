@@ -81,12 +81,11 @@ func (rs rucksack) contains(it item) bool {
 }
 
 func parseRucksacks(input *Input) ([]rucksack, error) {
-	rgx := regexp.MustCompile("[a-zA-Z]")
 	lines := input.Lines()
 	rucksacks := make([]rucksack, 0, len(lines))
 
 	for _, line := range lines {
-		rs, err := parseRucksack(line, rgx)
+		rs, err := parseRucksack(line)
 		if err != nil {
 			return nil, err
 		}
@@ -95,13 +94,15 @@ func parseRucksacks(input *Input) ([]rucksack, error) {
 	return rucksacks, nil
 }
 
-func parseRucksack(line string, rgx *regexp.Regexp) (rucksack, error) {
+var rucksackRgx = regexp.MustCompile("[a-zA-Z]")
+
+func parseRucksack(line string) (rucksack, error) {
 	rs := rucksack{items: []item(line)}
 	rcount := utf8.RuneCountInString(line)
 	if rcount == 0 || rcount%2 != 0 {
 		return rs, fmt.Errorf("rucksack is empty or contains an odd number of items: %s", line)
 	}
-	if !rgx.MatchString(line) {
+	if !rucksackRgx.MatchString(line) {
 		return rs, fmt.Errorf("rucksack contains invalid items: %s", line)
 	}
 

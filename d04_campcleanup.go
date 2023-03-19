@@ -63,12 +63,11 @@ func (s section) fullyOverlaps(o section) bool {
 }
 
 func parseAssignments(input *Input) ([]assignment, error) {
-	rgx := regexp.MustCompile(`^(\d+)-(\d+),(\d+)-(\d+)$`)
 	lines := input.Lines()
 	assignments := make([]assignment, len(lines))
 
 	for i, line := range lines {
-		as, err := parseAssignment(line, rgx)
+		as, err := parseAssignment(line)
 		if err != nil {
 			return nil, err
 		}
@@ -77,13 +76,15 @@ func parseAssignments(input *Input) ([]assignment, error) {
 	return assignments, nil
 }
 
-func parseAssignment(line string, rgx *regexp.Regexp) (assignment, error) {
+var assignmentRgx = regexp.MustCompile(`^(\d+)-(\d+),(\d+)-(\d+)$`)
+
+func parseAssignment(line string) (assignment, error) {
 	as := assignment{}
-	if !rgx.MatchString(line) {
+	if !assignmentRgx.MatchString(line) {
 		return as, fmt.Errorf("invalid line: %s", line)
 	}
 
-	groups := rgx.FindAllStringSubmatch(line, -1)
+	groups := assignmentRgx.FindAllStringSubmatch(line, -1)
 	ls, _ := strconv.Atoi(groups[0][1])
 	le, _ := strconv.Atoi(groups[0][2])
 	rs, _ := strconv.Atoi(groups[0][3])

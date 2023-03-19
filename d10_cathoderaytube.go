@@ -70,9 +70,12 @@ type Add struct {
 	Value int
 }
 
+var (
+	noopRgx = regexp.MustCompile(`^noop$`)
+	addxRgx = regexp.MustCompile(`^addx (-?\d+)$`)
+)
+
 func (p CathodeRayTube) parseInstructions(input *Input) ([]Add, error) {
-	noopRgx := regexp.MustCompile(`^noop$`)
-	addxRgx := regexp.MustCompile(`^addx (-?\d+)$`)
 	var result []Add
 
 	for _, line := range input.Lines() {

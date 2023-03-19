@@ -106,10 +106,11 @@ func makeRope(knots int) Rope {
 	return rope
 }
 
+var motionRgx = regexp.MustCompile(`^([LRUD]) (\d+)$`)
+
 func parseMotions(input *Input) ([]Motion, error) {
 	lines := input.Lines()
 	result := make([]Motion, len(lines))
-	rgx := regexp.MustCompile(`^([LRUD]) (\d+)$`)
 	deltas := map[string]Delta{
 		"R": {0, 1},
 		"L": {0, -1},
@@ -117,10 +118,10 @@ func parseMotions(input *Input) ([]Motion, error) {
 		"D": {1, 0},
 	}
 	for i, line := range lines {
-		if !rgx.MatchString(line) {
+		if !motionRgx.MatchString(line) {
 			return nil, fmt.Errorf("invalid line: %s", line)
 		}
-		groups := rgx.FindAllStringSubmatch(line, -1)
+		groups := motionRgx.FindAllStringSubmatch(line, -1)
 		delta := deltas[groups[0][1]]
 		steps, _ := strconv.Atoi(groups[0][2])
 		result[i] = Motion{Dir: delta, Steps: steps}

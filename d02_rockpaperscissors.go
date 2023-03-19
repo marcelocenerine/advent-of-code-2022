@@ -100,11 +100,10 @@ func calculatePlayerTotalScore(rounds []Round, strategy Strategy) int {
 }
 
 func parseRounds(input *Input) ([]Round, error) {
-	rgx := regexp.MustCompile(`^([ABC]) ([XYZ])$`)
 	lines := input.Lines()
 	rounds := make([]Round, len(lines))
 	for i, line := range input.Lines() {
-		round, err := parseRound(line, rgx)
+		round, err := parseRound(line)
 		if err != nil {
 			return nil, err
 		}
@@ -113,11 +112,13 @@ func parseRounds(input *Input) ([]Round, error) {
 	return rounds, nil
 }
 
-func parseRound(line string, rgx *regexp.Regexp) (Round, error) {
-	if !rgx.MatchString(line) {
+var roundRgx = regexp.MustCompile(`^([ABC]) ([XYZ])$`)
+
+func parseRound(line string) (Round, error) {
+	if !roundRgx.MatchString(line) {
 		return Round{}, fmt.Errorf("invalid line: %s", line)
 	}
-	groups := rgx.FindAllStringSubmatch(line, -1)
+	groups := roundRgx.FindAllStringSubmatch(line, -1)
 	opponent := Shape(groups[0][1])
 	player := EncPlay(groups[0][2])
 	return Round{player: player, opponent: opponent}, nil
