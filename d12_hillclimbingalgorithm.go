@@ -20,50 +20,66 @@ func (p HillClimbingAlgorithm) Solve(input *Input) (Result, error) {
 		return Result{}, err
 	}
 
-	part1 := strconv.Itoa(p.shortestPath(hm))
-	return Result{Part1: part1, Part2: "TODO"}, nil
+	return Result{
+		Part1: strconv.Itoa(p.shortestPathFromStartToDest(hm)),
+		Part2: strconv.Itoa(p.shortestFromLowestToDest(hm)),
+	}, nil
 }
 
-func (p HillClimbingAlgorithm) shortestPath(hm *heightmap) int {
-	dist := make([]int, hm.size())
-	for i := 0; i < len(dist); i++ {
-		dist[i] = math.MaxInt
-	}
-	dist[hm.index(hm.start)] = 0
+func (p HillClimbingAlgorithm) shortestPathFromStartToDest(hm *heightmap) int {
+	dist := p.shortestPaths(hm, hm.start, atMostOneHigher)
+	return dist[hm.dest.row][hm.dest.col]
+}
 
-	visited := make([]bool, hm.size())
-	pq := priorityQueue{
-		&square{hm.start, 0},
+func (p HillClimbingAlgorithm) shortestFromLowestToDest(hm *heightmap) int {
+	dist := p.shortestPaths(hm, hm.dest, atMostOneLower)
+	shortest := math.MaxInt
+
+	for r := 0; r < hm.height; r++ {
+		for c := 0; c < hm.width; c++ {
+			if hm.grid[r][c] != 'a' {
+				continue
+			}
+			if d := dist[r][c]; d < shortest {
+				shortest = d
+			}
+		}
 	}
+
+	return shortest
+}
+
+func (p HillClimbingAlgorithm) shortestPaths(hm *heightmap, from pos, canMove movePredicate) [][]int {
+	visited := make([]bool, hm.size())
+	dist := make([][]int, hm.height)
+	for r := 0; r < hm.height; r++ {
+		dist[r] = make([]int, hm.width)
+		for c := 0; c < hm.width; c++ {
+			dist[r][c] = math.MaxInt
+		}
+	}
+
+	dist[from.row][from.col] = 0
+	pq := priorityQueue{&square{from, 0}}
 
 	for len(pq) > 0 {
 		sq := heap.Pop(&pq).(*square)
-		sqi := hm.index(sq.pos)
-
-		if visited[sqi] {
-			continue
-		}
-
-		visited[sqi] = true
-
 		for _, adj := range hm.neighbors(sq.pos) {
-			adji := hm.index(adj)
-
-			if visited[adji] || !hm.canMove(sq.pos, adj) {
+			if i := hm.index(adj); visited[i] || !canMove(hm, sq.pos, adj) {
 				continue
 			}
 
-			oldDist := dist[adji]
+			oldDist := dist[adj.row][adj.col]
 			newDist := sq.dist + 1
 
 			if newDist < oldDist {
-				dist[adji] = newDist
+				dist[adj.row][adj.col] = newDist
 				heap.Push(&pq, &square{adj, newDist})
 			}
 		}
 	}
 
-	return dist[hm.index(hm.dest)]
+	return dist
 }
 
 type pos struct {
@@ -84,8 +100,14 @@ func (h *heightmap) index(p pos) int {
 	return p.row*h.width + p.col
 }
 
-func (h *heightmap) canMove(from, to pos) bool {
-	return h.grid[to.row][to.col]-h.grid[from.row][from.col] <= 1
+type movePredicate func(*heightmap, pos, pos) bool
+
+var atMostOneHigher = func(hm *heightmap, from, to pos) bool {
+	return hm.grid[to.row][to.col]-hm.grid[from.row][from.col] <= 1
+}
+
+var atMostOneLower = func(hm *heightmap, from, to pos) bool {
+	return atMostOneHigher(hm, to, from)
 }
 
 func (h *heightmap) neighbors(p pos) []pos {
