@@ -65,7 +65,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: HillClimbingAlgorithm{},
-			want:   Result{Part1: "?", Part2: "?"},
+			want:   Result{Part1: "423", Part2: "?"},
 		},
 		{
 			puzzle: DistressSignal{},
