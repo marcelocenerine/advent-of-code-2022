@@ -21,9 +21,6 @@ func (p CathodeRayTube) Solve(input *Input) (Result, error) {
 	}
 	part1 := p.sumOfSignalStrengths(instructions, 20, 40)
 	part2 := p.crtDraw(instructions, 40, 3)
-	if err != nil {
-		return Result{}, err
-	}
 	return Result{
 		Part1: strconv.Itoa(part1),
 		Part2: part2,
