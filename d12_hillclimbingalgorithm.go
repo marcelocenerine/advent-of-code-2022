@@ -2,7 +2,6 @@
 package adventofcode
 
 import (
-	"container/heap"
 	"errors"
 	"math"
 	"strconv"
@@ -60,21 +59,23 @@ func (p HillClimbingAlgorithm) shortestPaths(hm *heightmap, from pos, canMove mo
 	}
 
 	dist[from.row][from.col] = 0
-	pq := priorityQueue{&square{from, 0}}
+	queue := []pos{from}
 
-	for len(pq) > 0 {
-		sq := heap.Pop(&pq).(*square)
-		for _, adj := range hm.neighbors(sq.pos) {
-			if i := hm.index(adj); visited[i] || !canMove(hm, sq.pos, adj) {
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+
+		for _, adj := range hm.neighbors(cur) {
+			if i := hm.index(adj); visited[i] || !canMove(hm, cur, adj) {
 				continue
 			}
 
 			oldDist := dist[adj.row][adj.col]
-			newDist := sq.dist + 1
+			newDist := dist[cur.row][cur.col] + 1
 
 			if newDist < oldDist {
 				dist[adj.row][adj.col] = newDist
-				heap.Push(&pq, &square{adj, newDist})
+				queue = append(queue, adj)
 			}
 		}
 	}
@@ -170,29 +171,4 @@ func (p HillClimbingAlgorithm) parseHeightmap(input *Input) (*heightmap, error) 
 	}
 
 	return hm, nil
-}
-
-type square struct {
-	pos  pos
-	dist int
-}
-
-type priorityQueue []*square
-
-func (pq priorityQueue) Len() int           { return len(pq) }
-func (pq priorityQueue) Less(i, j int) bool { return pq[i].dist < pq[j].dist }
-func (pq priorityQueue) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
-
-func (pq *priorityQueue) Push(x any) {
-	item := x.(*square)
-	*pq = append(*pq, item)
-}
-
-func (pq *priorityQueue) Pop() any {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	old[n-1] = nil
-	*pq = old[0 : n-1]
-	return item
 }
