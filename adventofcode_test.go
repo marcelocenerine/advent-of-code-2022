@@ -69,7 +69,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: DistressSignal{},
-			want:   Result{Part1: "?", Part2: "?"},
+			want:   Result{Part1: "5843", Part2: "?"},
 		},
 		{
 			puzzle: RegolithReservoir{},
