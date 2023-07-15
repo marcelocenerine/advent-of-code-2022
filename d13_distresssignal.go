@@ -3,6 +3,7 @@ package adventofcode
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -21,7 +22,7 @@ func (p DistressSignal) Solve(input *Input) (Result, error) {
 
 	return Result{
 		Part1: strconv.Itoa(p.sumIndexOfPairsInTheRightOrder(pairs)),
-		Part2: "TODO",
+		Part2: strconv.Itoa(p.decoderKey(pairs)),
 	}, nil
 }
 
@@ -35,40 +36,51 @@ func (p DistressSignal) sumIndexOfPairsInTheRightOrder(pairs []packetPair) int {
 	return result
 }
 
+func (p DistressSignal) decoderKey(pairs []packetPair) int {
+	var packets []packet
+	for _, pair := range pairs {
+		packets = append(packets, pair.left, pair.right)
+	}
+	sort.Slice(packets, func(i, j int) bool { return packets[i].compare(packets[j]) < 0 })
+
+	i, j := 1, len(packets)
+	div1 := packet{listValue{intValue(2).asList()}}
+	div2 := packet{listValue{intValue(6).asList()}}
+
+	for ; i < j && div1.compare(packets[i-1]) > 0; i++ {
+	}
+	for ; j > i && div2.compare(packets[j-1]) < 0; j-- {
+	}
+
+	return i * (j + 2)
+}
+
 type packetData interface {
 	asList() listValue
 }
 
-type listValue struct {
-	values []packetData
-}
+type listValue []packetData
 
 func (l listValue) asList() listValue { return l }
 
-type intValue struct {
-	value int
-}
+type intValue int
 
-func (i intValue) asList() listValue { return listValue{[]packetData{i}} }
+func (i intValue) asList() listValue { return listValue{i} }
 
 type packet struct {
-	content listValue
+	data listValue
 }
 
-type packetPair struct {
-	left, right packet
-}
-
-func (p packetPair) isInOrder() bool {
+func (p packet) compare(that packet) int {
 	var recurse func(left, right listValue) int
 	recurse = func(left, right listValue) int {
-		for i := 0; i < len(left.values); i++ {
-			if i == len(right.values) {
+		for i := 0; i < len(left); i++ {
+			if i == len(right) {
 				return 1 // right ran out of items
 			}
 
-			li := left.values[i]
-			ri := right.values[i]
+			li := left[i]
+			ri := right[i]
 			_, liListOk := li.(listValue)
 			_, riListOk := ri.(listValue)
 
@@ -82,18 +94,26 @@ func (p packetPair) isInOrder() bool {
 			liInt, _ := li.(intValue)
 			riInt, _ := ri.(intValue)
 
-			if liInt.value == riInt.value {
+			if liInt == riInt {
 				continue
 			}
 
-			return liInt.value - riInt.value
+			return int(liInt - riInt)
 		}
 
 		// did left run out of items?
-		return len(left.values) - len(right.values)
+		return len(left) - len(right)
 	}
 
-	return recurse(p.left.content, p.right.content) < 1
+	return recurse(p.data, that.data)
+}
+
+type packetPair struct {
+	left, right packet
+}
+
+func (p packetPair) isInOrder() bool {
+	return p.left.compare(p.right) < 1
 }
 
 func (p DistressSignal) parse(input *Input) ([]packetPair, error) {
@@ -162,7 +182,7 @@ func (p DistressSignal) parsePacketData(line string, start int) (listValue, int,
 		if curChar == ',' {
 			if curInt != "" {
 				value, _ := strconv.Atoi(curInt)
-				result.values = append(result.values, intValue{value})
+				result = append(result, intValue(value))
 				curInt = ""
 			}
 			continue
@@ -174,7 +194,7 @@ func (p DistressSignal) parsePacketData(line string, start int) (listValue, int,
 				return listValue{}, 0, err
 			}
 
-			result.values = append(result.values, data)
+			result = append(result, data)
 			i = end
 			continue
 		}
@@ -182,7 +202,7 @@ func (p DistressSignal) parsePacketData(line string, start int) (listValue, int,
 		if curChar == ']' {
 			if curInt != "" {
 				value, _ := strconv.Atoi(curInt)
-				result.values = append(result.values, intValue{value})
+				result = append(result, intValue(value))
 			}
 			closeFound = true
 			break
