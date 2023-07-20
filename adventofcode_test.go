@@ -73,7 +73,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: RegolithReservoir{},
-			want:   Result{Part1: "655", Part2: "?"},
+			want:   Result{Part1: "655", Part2: "26484"},
 		},
 		{
 			puzzle: BeaconExclusionZone{},

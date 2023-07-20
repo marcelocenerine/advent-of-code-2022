@@ -15,20 +15,21 @@ func (p RegolithReservoir) Details() Details {
 }
 
 func (p RegolithReservoir) Solve(input *Input) (Result, error) {
-	paths, err := p.parse(input)
+	rockPaths, err := p.parse(input)
 	if err != nil {
 		return Result{}, err
 	}
 
-	cave := p.draw(paths)
+	source := point{x: 500, y: 0}
 	return Result{
-		Part1: strconv.Itoa(p.countUnitsOfSandBeforeFlowingIntoAbyss(cave, point{x: 500, y: 0})),
-		Part2: "TODO",
+		Part1: strconv.Itoa(p.countPouredUnitsOfSand(rockPaths, source, -1)),
+		Part2: strconv.Itoa(p.countPouredUnitsOfSand(rockPaths, source, 1)),
 	}, nil
 }
 
-func (p RegolithReservoir) countUnitsOfSandBeforeFlowingIntoAbyss(cave cave, source point) int {
+func (p RegolithReservoir) countPouredUnitsOfSand(paths []rockPath, source point, floorPadding int) int {
 	result := 0
+	cave := p.draw(paths, floorPadding)
 	for {
 		if _, ok := cave.pourSand(source); !ok {
 			break
@@ -48,14 +49,14 @@ type point struct {
 	x, y int
 }
 
-type path []point
+type rockPath []point
 
-func (p path) full() path {
+func (p rockPath) full() rockPath {
 	if len(p) <= 1 {
 		return p
 	}
 
-	var result path
+	var result rockPath
 
 	for i, curr := range p {
 		if i == 0 {
@@ -96,21 +97,31 @@ func (p path) full() path {
 type tile rune
 
 type cave struct {
-	rows, cols int
-	tiles      [][]tile
-	abyss      []bool
+	tiles    [][]tile
+	abyss    []bool
+	hasFloor bool
 }
 
 func (c *cave) tile(p point) tile {
-	if !c.isWithinBounds(p) {
+	c.mustBeValid(p)
+
+	if p.y >= len(c.tiles) {
+		if c.hasFloor {
+			return rock
+		}
 		return air
 	}
+
+	if p.x >= len(c.tiles[p.y]) {
+		return air
+	}
+
 	return c.tiles[p.y][p.x]
 }
 
 func (c *cave) pourSand(source point) (point, bool) {
 	if c.tile(source) != air || c.leadToAbyss(source) {
-		return point{-1, -1}, false
+		return point{}, false
 	}
 
 	cur := source
@@ -125,7 +136,6 @@ OUTER:
 
 		for _, move := range candidateMoves {
 			if c.leadToAbyss(move) {
-				c.abyss[cur.x] = true
 				break OUTER
 			}
 
@@ -135,29 +145,42 @@ OUTER:
 			}
 		}
 
-		c.tiles[cur.y][cur.x] = sand
+		if cur.x == len(c.tiles[cur.y]) { // row needs to be expanded
+			c.tiles[cur.y] = append(c.tiles[cur.y], sand)
+		} else {
+			c.tiles[cur.y][cur.x] = sand
+		}
 		return cur, true
 	}
 
-	return point{-1, -1}, false
+	return point{}, false
+}
+
+func (c *cave) mustBeValid(p point) {
+	if p.x < 0 || p.y < 0 {
+		// Infinite left/up is not supported.
+		panic(fmt.Sprintf("invalid point %v", p))
+	}
 }
 
 func (c *cave) leadToAbyss(p point) bool {
-	return !c.isWithinBounds(p) || c.abyss[p.x]
-}
+	c.mustBeValid(p)
 
-func (c *cave) isWithinBounds(p point) bool {
-	return p.x >= 0 && p.x < c.cols && p.y >= 0 && p.y < c.rows
+	if c.hasFloor {
+		return false
+	}
+
+	return p.y >= len(c.tiles) || p.x >= len(c.abyss) || c.abyss[p.x]
 }
 
 var pointRgx = regexp.MustCompile(`^(\d+),(\d+)$`)
 
-func (p RegolithReservoir) parse(input *Input) ([]path, error) {
+func (p RegolithReservoir) parse(input *Input) ([]rockPath, error) {
 	lines := input.Lines()
-	result := make([]path, len(lines))
+	result := make([]rockPath, len(lines))
 
 	for i, line := range lines {
-		var path path
+		var path rockPath
 		for j, segment := range strings.Split(line, " -> ") {
 			if !pointRgx.MatchString(segment) {
 				return nil, fmt.Errorf("invalid segment on line %d: %s", i, segment)
@@ -178,7 +201,7 @@ func (p RegolithReservoir) parse(input *Input) ([]path, error) {
 	return result, nil
 }
 
-func (p RegolithReservoir) draw(paths []path) cave {
+func (p RegolithReservoir) draw(paths []rockPath, floorPadding int) cave {
 	if len(paths) == 0 {
 		return cave{}
 	}
@@ -196,6 +219,11 @@ func (p RegolithReservoir) draw(paths []path) cave {
 		}
 	}
 
+	hasFloor := floorPadding >= 0
+	if hasFloor {
+		rows += floorPadding
+	}
+
 	tiles := make([][]tile, rows)
 	for r := 0; r < rows; r++ {
 		tiles[r] = make([]tile, cols)
@@ -206,7 +234,7 @@ func (p RegolithReservoir) draw(paths []path) cave {
 
 	abyss := make([]bool, cols)
 	for c := 0; c < cols; c++ {
-		abyss[c] = true
+		abyss[c] = !hasFloor
 	}
 
 	// Draw rocks and mark off columns that don't lead to the abyss.
@@ -217,5 +245,5 @@ func (p RegolithReservoir) draw(paths []path) cave {
 		}
 	}
 
-	return cave{rows, cols, tiles, abyss}
+	return cave{tiles, abyss, hasFloor}
 }
