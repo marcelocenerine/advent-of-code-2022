@@ -77,7 +77,7 @@ func TestSolutions(t *testing.T) {
 		},
 		{
 			puzzle: BeaconExclusionZone{},
-			want:   Result{Part1: "5144286", Part2: "?"},
+			want:   Result{Part1: "5144286", Part2: "10229191267339"},
 		},
 		{
 			puzzle: ProboscideaVolcanium{},
